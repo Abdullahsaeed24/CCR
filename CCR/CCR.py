@@ -94,9 +94,41 @@ class VUT_FileAnalysis:
 
 
 
-
+#Lng[wgs84].1
+#Lat[wgs84].1
 
 df = VUT_FileAnalysis("TRIAL_220616_110008_00401_FBl_26_AUTOSAVE.txt")
 df.Read_CSV_File()
-print(df.DataFrame.head())
-print(df.DataFrame.describe())
+print(df.DataFrame.head(),"\n")
+print(df.DataFrame.describe(),"\n")
+
+print("FB - > Lat[wgs84].1 NAN values is ",df.DataFrame["Lat[wgs84].1"].isnull().sum(),"\n")
+print("FB - > Lng[wgs84].1 NAN values is ",df.DataFrame["Lng[wgs84].1"].isnull().sum(),"\n")
+
+print("VUT - > Lat[wgs84].2 NAN values is ",df.DataFrame["Lat[wgs84].2"].isnull().sum(),"\n")
+print("VUT - > Lng[wgs84].2 NAN values is ",df.DataFrame["Lng[wgs84].2"].isnull().sum(),"\n")
+
+
+VUTx = ["VUT Latitude","VUT Logitude"]
+VUTy = [df.DataFrame["Lat[wgs84].2"].isnull().sum(),df.DataFrame["Lng[wgs84].2"].isnull().sum()]
+
+FBx = ["FB Latitude","FB Logitude"]
+FBy = [df.DataFrame["Lat[wgs84].1"].isnull().sum(),df.DataFrame["Lng[wgs84].1"].isnull().sum()]
+
+'''
+plt.bar(VUTx,VUTy,0.35,color='red',edgecolor='black')
+plt.bar(FBx,FBy,0.35,color='blue',edgecolor='black')
+plt.title('Number of NAN Data in the VUT and FB Data File')
+plt.legend(['VUT','FB'])
+plt.show()
+'''
+plt.subplot(1,2,1)
+plt.bar(VUTx,VUTy, color = 'red', edgecolor='black')
+plt.title('NAN in VUT Data')
+plt.legend()
+
+plt.subplot(1,2,2)
+plt.bar(FBx,FBy,color = 'blue',edgecolor='black')
+plt.title('NAN in FB Data')
+plt.legend()
+plt.show()
