@@ -41,9 +41,10 @@ class VUT_FileAnalysis:
 
 
     # privite method
-    def __Get_Rows_Length(self) -> None:
+    def __Get_Headers_Length(self) -> None:
 
-        ''' handling and adjusting the file -> isolate the Not Flat file data and handling the semicolon seperated data
+        ''' GET the headers number in the insertes file -> the headers number is not the entire number its just the just the first N
+            HEADERS befor the the semicolon seperated Data
         INPUT: No INPUT
         OUTPUT: NO return
         '''
@@ -53,13 +54,21 @@ class VUT_FileAnalysis:
 
 
     def Get_Test_Headers(self) -> list:
+        ''' GET the first N headers of the file
+        INPUT: None
+        OUTPUT: return list with the headers
+        '''
         self.__FileData_Handling()
         return self.TestData
 
 
     def Read_CSV_File (self) -> None:
+
         self.__FileData_Handling()
-        self.DataFrame = pd.read_csv(self.FileleName , sep = ";" , skiprows = self.__Get_Rows_Length())
+        try:
+            self.DataFrame = pd.read_csv(self.FileleName , sep = ";" , skiprows = self.__Get_Headers_Length())
+        except:
+            print("PLEASE Note THAT the FILE Might be Corrupted")
 
 
 
