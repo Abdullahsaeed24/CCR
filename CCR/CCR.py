@@ -20,6 +20,22 @@ class VUT_FileAnalysis:
         self.TestData = []
         self.DataFrame = None
 
+        # Expected DataFrame Variable to hold Expected Data File
+        self.Expected_DataFrame = None
+
+        # VUT and FB DataFrame Variables to hold VUT and FB Data Files
+        self.FB_DataFrame = None
+        self.VUT_DataFrame = None
+
+        # FB NaN Variables
+        self.FB_Lat_NaN_Data = None
+        self.FB_Lng_NaN_Data = None
+
+        # VUT NaN Variables
+        self.VUT_Lat_NaN_Data = None
+        self.VUT_Lng_NaN_Data = None
+
+
 
     # privite method
     def __FileData_Handling(self)->str:
@@ -64,79 +80,122 @@ class VUT_FileAnalysis:
 
     def Read_CSV_File (self) -> None:
 
+        ''' file handling and Data isolation
+        INPUT: None
+        OUTPUT: None
+        '''
+
         self.__FileData_Handling()
         try:
             self.DataFrame = pd.read_csv(self.FileleName , sep = ";" , skiprows = self.__Get_Headers_Length())
+
+            # isolating the data of the file
+            self.Expected_DataFrame = self.DataFrame.loc[:,"Name":"East[m]"]
+            self.FB_DataFrame = self.DataFrame.loc[:,"Name.1":"DistanceFromOrigin[m]"]
+            self.VUT_DataFrame = self.DataFrame.loc[:,"Name.2":]
+
+            self.FB_Lat_NaN_Data = self.FB_DataFrame["Lat[wgs84].1"].isnull().sum()
+            self.FB_Lng_NaN_Data = self.FB_DataFrame["Lng[wgs84].1"].isnull().sum()
+
+            self.VUT_Lat_NaN_Data = self.VUT_DataFrame["Lat[wgs84].2"].isnull().sum()
+            self.VUT_Lng_NaN_Data = self.VUT_DataFrame["Lng[wgs84].2"].isnull().sum()
+
+
         except:
             print("PLEASE Note THAT the FILE Might be Corrupted")
 
 
 
-'''
-        self.NewFileName ="FileAnalysis"+self.FileleName
-        file = open(self.NewFileName,"w")
+    def SHOW_VUT_NaN_Data(self):
 
-        with open(self.FileleName) as f:
-            for line in f:
-                l = line.strip()
-
-                if (l in self.TestData):
-                    continue
-
-                else:
-                    if l != "END_OF_HEADER":
-                        file.write(line)
-
-        file.close()
-        return self.NewFileName
-'''
+        ''' Show VUT NaN Data
+        INPUT: None
+        OUTPUT: None
+        '''
+        print("VUT_Lat_NaN_Data = {}".format(self.VUT_Lat_NaN_Data))
+        print("VUT_Lng_NaN_Data = {}".format(self.VUT_Lng_NaN_Data))
+        print("\n")
 
 
+    def SHOW_FB_NaN_Data(self):
+
+        ''' Show FB NAN Data
+        INPUT: None
+        OUTPUT: None
+        '''
+        print("FB_Lat_NaN_Data = {}".format(self.FB_Lat_NaN_Data))
+        print("FB_Lng_NaN_Data = {}".format(self.FB_Lng_NaN_Data))
+        print("\n")
 
 
-#Lng[wgs84].1
-#Lat[wgs84].1
+    def Get_NaN_Values(self,data_seg:str,column:str)-> int:
 
+        ''' Show NaN Data in the given data Segment(VUT or FB) with the certain column and Show
+            messages if inputs are wrong and also show some guides
+
+        INPUT: data_seg:str -> either VUT or FB
+               column:str -> data column in the data Segment
+
+        OUTPUT: (int) Number of NaN Values in the passed data Segment
+        '''
+        data_seg = data_seg.upper()
+
+        if (data_seg == "VUT"):
+
+            if column in (self.VUT_DataFrame.columns):
+                return self.VUT_DataFrame[column].isnull().sum()
+
+            else:
+                comment ="Wrong Column Name , Please Ckeck The Columns Names and Enter The Right Name\nFor The Right Name you Can use This line -> objectname.VUT_DataFrame.columns\n"
+                print(comment)
+                return -1
+
+        elif (data_seg == "FB") :
+
+            if column in (self.FB_DataFrame.columns):
+                return self.FB_DataFrame[column].isnull().sum()
+            else:
+
+                comment ="Wrong Column Name , Please Ckeck The Columns Names and Enter The Right Name.\nFor The Right Name you Can use This line -> objectname.VUT_DataFrame.columns\n"
+                print(comment)
+                return -1
+
+        else:
+            print("Wrong Data Segment Name Please Enter The Right Name(VUT or FB)\n")
+            return -1
+
+
+
+
+
+
+# create object of type VUT_FileAnalysis
 df = VUT_FileAnalysis("TRIAL_220616_110008_00401_FBl_26_AUTOSAVE.txt")
 df.Read_CSV_File()
-print(df.DataFrame.head(),"\n")
-print(df.DataFrame.describe(),"\n")
-
-print("FB - > Lat[wgs84].1 NAN values is ",df.DataFrame["Lat[wgs84].1"].isnull().sum(),"\n")
-print("FB - > Lng[wgs84].1 NAN values is ",df.DataFrame["Lng[wgs84].1"].isnull().sum(),"\n")
-
-print("VUT - > Lat[wgs84].2 NAN values is ",df.DataFrame["Lat[wgs84].2"].isnull().sum(),"\n")
-print("VUT - > Lng[wgs84].2 NAN values is ",df.DataFrame["Lng[wgs84].2"].isnull().sum(),"\n")
 
 
-VUTx = ["VUT Latitude","VUT Logitude"]
-VUTy = [df.DataFrame["Lat[wgs84].2"].isnull().sum(),df.DataFrame["Lng[wgs84].2"].isnull().sum()]
+# check the Expected,FB & VUT Data
+print(df.Expected_DataFrame.head())
+print(df.VUT_DataFrame.head())
+print(df.FB_DataFrame.columns)
 
-FBx = ["FB Latitude","FB Logitude"]
-FBy = [df.DataFrame["Lat[wgs84].1"].isnull().sum(),df.DataFrame["Lng[wgs84].1"].isnull().sum()]
-
-'''
-plt.bar(VUTx,VUTy,0.35,color='red',edgecolor='black')
-plt.bar(FBx,FBy,0.35,color='blue',edgecolor='black')
-plt.title('Number of NAN Data in the VUT and FB Data File')
-plt.legend(['VUT','FB'])
-plt.show()
-'''
-
-# NOTE: here i isolated the VUT Data AND FB Data
-
-# FB Data
-FB_Data = df.DataFrame.loc[:,"Name.1":"DistanceFromOrigin[m]"]
-
-#VUT Data
-VUT_Data = df.DataFrame.loc[:,"Name.2":]
-
-# check the FB & VUT Data
-print(FB_Data.head())
-print(VUT_Data.head())
+# test the Get_NaN_Values methods
+data = df.Get_NaN_Values("fb","Lng[wgs84].1")
+print(data)
 
 
 # Number of NAN Values in the DataFrame of BOTH FB and VUT
+df.SHOW_FB_NaN_Data()
+df.SHOW_VUT_NaN_Data()
+
+
+# PLOTING THE NaN Values in VUT and FB
+VUTx = ["VUT Latitude","VUT Logitude"]
+VUTy = [df.VUT_Lat_NaN_Data , df.VUT_Lng_NaN_Data]
+
+FBx = ["FB Latitude","FB Logitude"]
+FBy = [df.FB_Lat_NaN_Data,df.FB_Lng_NaN_Data]
+
 plt.subplot(1,2,1)
 plt.bar(VUTx,VUTy, color = 'red', edgecolor='black')
 plt.title('NAN in VUT Data')
