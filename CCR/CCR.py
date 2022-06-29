@@ -122,13 +122,26 @@ plt.title('Number of NAN Data in the VUT and FB Data File')
 plt.legend(['VUT','FB'])
 plt.show()
 '''
+
+# NOTE: here i isolated the VUT Data AND FB Data
+
+# FB Data
+FB_Data = df.DataFrame.loc[:,"Name.1":"DistanceFromOrigin[m]"]
+
+#VUT Data
+VUT_Data = df.DataFrame.loc[:,"Name.2":]
+
+# check the FB & VUT Data
+print(FB_Data.head())
+print(VUT_Data.head())
+
+
+# Number of NAN Values in the DataFrame of BOTH FB and VUT
 plt.subplot(1,2,1)
 plt.bar(VUTx,VUTy, color = 'red', edgecolor='black')
 plt.title('NAN in VUT Data')
-plt.legend()
 
 plt.subplot(1,2,2)
 plt.bar(FBx,FBy,color = 'blue',edgecolor='black')
 plt.title('NAN in FB Data')
-plt.legend()
 plt.show()
