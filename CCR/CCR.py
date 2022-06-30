@@ -177,7 +177,7 @@ df.Read_CSV_File()
 # check the Expected,FB & VUT Data
 print(df.Expected_DataFrame.head())
 print(df.VUT_DataFrame.head())
-print(df.FB_DataFrame.columns)
+print(df.FB_DataFrame.head())
 
 # test the Get_NaN_Values methods
 data = df.Get_NaN_Values("fb","Lng[wgs84].1")
