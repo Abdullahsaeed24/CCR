@@ -94,6 +94,19 @@ class VUT_FileAnalysis:
             self.FB_DataFrame = self.DataFrame.loc[:,"Name.1":"DistanceFromOrigin[m]"]
             self.VUT_DataFrame = self.DataFrame.loc[:,"Name.2":]
 
+            #self.FB_DataFrame.fillna(method = 'backfill', axis = 0)
+            #self.VUT_DataFrame.fillna(method = 'backfill', axis = 0)
+
+            # delete the Information column in both VUT and FB DataFrame because it's entirly contain the NaN values so it's useless
+            del(self.FB_DataFrame["Information.1"])
+            del(self.VUT_DataFrame["Information.2"])
+
+            # delete the NaN values in the rest of coulmns
+            self.FB_DataFrame.dropna(axis = 0,inplace = True)
+            #self.VUT_DataFrame.dropna(axis = 0,inplace = True)
+            self.VUT_DataFrame.fillna(method = 'backfill', axis = 0,inplace = True)
+
+
             self.FB_Lat_NaN_Data = self.FB_DataFrame["Lat[wgs84].1"].isnull().sum()
             self.FB_Lng_NaN_Data = self.FB_DataFrame["Lng[wgs84].1"].isnull().sum()
 
@@ -173,22 +186,26 @@ class VUT_FileAnalysis:
 df = VUT_FileAnalysis("TRIAL_220616_110008_00401_FBl_26_AUTOSAVE.txt")
 df.Read_CSV_File()
 
-
-# check the Expected,FB & VUT Data
-print(df.Expected_DataFrame.head())
 print(df.VUT_DataFrame.head())
 print(df.FB_DataFrame.head())
 
-# test the Get_NaN_Values methods
-data = df.Get_NaN_Values("fb","Lng[wgs84].1")
-print(data)
+print(df.VUT_DataFrame.isnull().sum() )
+print(df.FB_DataFrame.isnull().sum())
 
 
-# Number of NAN Values in the DataFrame of BOTH FB and VUT
-df.SHOW_FB_NaN_Data()
-df.SHOW_VUT_NaN_Data()
 
 
+'''
+plt.subplot(1,2,1)
+df.FB_DataFrame.boxplot("North[m].1")
+
+plt.subplot(1,2,2)
+df.FB_DataFrame.boxplot("East[m].1")
+plt.show()
+'''
+
+
+'''
 # PLOTING THE NaN Values in VUT and FB
 VUTx = ["VUT Latitude","VUT Logitude"]
 VUTy = [df.VUT_Lat_NaN_Data , df.VUT_Lng_NaN_Data]
@@ -204,3 +221,4 @@ plt.subplot(1,2,2)
 plt.bar(FBx,FBy,color = 'blue',edgecolor='black')
 plt.title('NAN in FB Data')
 plt.show()
+'''
