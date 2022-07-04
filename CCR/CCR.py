@@ -2,7 +2,10 @@
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
+import math
 import random
+import colorama
+from colorama import Fore
 
 
 
@@ -180,6 +183,69 @@ class VUT_FileAnalysis:
 
 
 
+    def __Calculate_Distance(self,**parameter) -> float:
+
+        ''' Calculate the distance based on given parameters
+        E -> East  (m)
+        N -> North (m)
+
+        (E1,N1) , (E2,N2)
+        D^2 = (E2 - E1)^2 + (N2 - N1)^2
+        d = sqrt(D^2)
+
+        INPUT: Location N coordinates (E1 , N1)
+               Location N+1 coordinates (E2 , N2)
+
+        OUTPUT: return Distance  in meters
+        '''
+
+        Distance_square =  pow((parameter["E2"] - parameter["E1"]),2) + pow((parameter["N2"] - parameter["N1"]),2)
+        return math.sqrt(Distance_square)
+
+
+
+    def __Calculate_Time(self ,**timestamp) -> float:
+
+        ''' Calculate the time based on given parameters
+
+        t1 -> time at Location 1 coordinates time in msec
+        t2 -> time at Location 2 coordinates time in msec
+
+        INPUT: t1 , t2
+
+        OUTPUT: return time diffrance between t2-t1 in sec
+        '''
+        time  =  abs(timestamp['t2'] - timestamp['t1']) / 1000 # time convertion from msec into sec
+
+        return time # time in sec
+
+
+
+
+    def __Calculate_Velocity(self , **data) -> float:
+
+        ''' Calculate the Velocity , Velocity should be in m/h (meter per hours)
+
+        INPUT: d -> distance
+               t -> time
+
+        OUTPUT: return Velocity
+
+        '''
+        return (data['d'] / data['t']) * 3600  # convertion from m/sec into m/h
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # create object of type VUT_FileAnalysis
@@ -193,8 +259,12 @@ print(df.VUT_DataFrame.isnull().sum() )
 print(df.FB_DataFrame.isnull().sum())
 
 
+print(df.FB_DataFrame.shape)
 
+print(len(df.FB_DataFrame["North[m].1"]))
 
+#plt.hist(df.FB_DataFrame["North[m].1"],bins = 2000)
+#plt.show()
 '''
 plt.subplot(1,2,1)
 df.FB_DataFrame.boxplot("North[m].1")
