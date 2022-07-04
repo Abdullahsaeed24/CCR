@@ -200,7 +200,7 @@ class VUT_FileAnalysis:
         '''
 
         Distance_square =  pow((parameter["E2"] - parameter["E1"]),2) + pow((parameter["N2"] - parameter["N1"]),2)
-        return math.sqrt(Distance_square)
+        return math.sqrt(Distance_square) # return d
 
 
 
@@ -236,6 +236,13 @@ class VUT_FileAnalysis:
 
 
 
+    def compare_velocity(self):
+
+        for x in range(0,self.FB_DataFrame.shape[0]): # from  0  ----> shape[0] - 1   3460 -1
+
+            if (x+1) == (self.FB_DataFrame.shape[0]-1):
+                distance = self.__Calculate_Distance(E1 =self.FB_DataFrame["East[m].1"][x] , E2 =self.FB_DataFrame["East[m].1"][x+1] , N1 =self.FB_DataFrame["North[m].1"][x]  , N2 =self.FB_DataFrame["North[m].1"][x+1] )
+
 
 
 
@@ -253,15 +260,22 @@ df = VUT_FileAnalysis("TRIAL_220616_110008_00401_FBl_26_AUTOSAVE.txt")
 df.Read_CSV_File()
 
 print(df.VUT_DataFrame.head())
-print(df.FB_DataFrame.head())
+print(df.FB_DataFrame)
 
 print(df.VUT_DataFrame.isnull().sum() )
 print(df.FB_DataFrame.isnull().sum())
+print(df.FB_DataFrame)
+
+d= []
+
+d.append(d)
+
+print(d )
 
 
+print(len(df.FB_DataFrame["East[m].1"]))
 print(df.FB_DataFrame.shape)
-
-print(len(df.FB_DataFrame["North[m].1"]))
+df.FB_DataFrame.to_csv("FB.csv")
 
 #plt.hist(df.FB_DataFrame["North[m].1"],bins = 2000)
 #plt.show()
