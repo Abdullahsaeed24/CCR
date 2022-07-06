@@ -38,6 +38,8 @@ class VUT_FileAnalysis:
         self.VUT_Lat_NaN_Data = None
         self.VUT_Lng_NaN_Data = None
 
+        self.comparison_result = []
+        self.velocity_store = []
 
 
     # privite method
@@ -106,7 +108,11 @@ class VUT_FileAnalysis:
 
             # delete the NaN values in the rest of coulmns
             self.FB_DataFrame.dropna(axis = 0,inplace = True)
-            #self.VUT_DataFrame.dropna(axis = 0,inplace = True)
+
+            # reset the data index
+            self.FB_DataFrame = self.FB_DataFrame.reset_index()
+
+            # i did not remove the nan data because there are alot of columns have nan data and removing them cause remove all data
             self.VUT_DataFrame.fillna(method = 'backfill', axis = 0,inplace = True)
 
 
@@ -183,7 +189,7 @@ class VUT_FileAnalysis:
 
 
 
-    def __Calculate_Distance(self,**parameter) -> float:
+    def __Calculate_Distance(self,**coordinates) -> float:
 
         ''' Calculate the distance based on given parameters
         E -> East  (m)
@@ -199,8 +205,14 @@ class VUT_FileAnalysis:
         OUTPUT: return Distance  in meters
         '''
 
-        Distance_square =  pow((parameter["E2"] - parameter["E1"]),2) + pow((parameter["N2"] - parameter["N1"]),2)
-        return math.sqrt(Distance_square) # return d
+        E = coordinates["E2"] - coordinates["E1"]
+        N = coordinates["N2"] - coordinates["N1"]
+
+        Distance_square = pow(E,2) + pow(N,2)
+
+        d = math.sqrt(Distance_square)
+
+        return d # return d (m)
 
 
 
@@ -236,22 +248,63 @@ class VUT_FileAnalysis:
 
 
 
-    def compare_velocity(self):
-
-        for x in range(0,self.FB_DataFrame.shape[0]): # from  0  ----> shape[0] - 1   3460 -1
-
-            if (x+1) == (self.FB_DataFrame.shape[0]-1):
-                distance = self.__Calculate_Distance(E1 =self.FB_DataFrame["East[m].1"][x] , E2 =self.FB_DataFrame["East[m].1"][x+1] , N1 =self.FB_DataFrame["North[m].1"][x]  , N2 =self.FB_DataFrame["North[m].1"][x+1] )
 
 
+    def Velocity_Assessment(self) -> None:
+
+        ''' Calculate the distance , time diffrance between two points , velocity from point 1 to point 2
+            and compare whether the velocity > 150 meter per hour or not if so assign its status as Failed otherwise Passed
+            assign the calculated velocity in list called  ->> velocity_store
+            asssign the status of the Velocity Assessment in list called ->> comparison_result
+
+            INPUT: None
+
+            OUTPUT: No return
+        '''
+
+        for x in range(0,self.FB_DataFrame.shape[0]-1,1): # 0 ---> FB_DataFrame.shape[0]-1
+
+            # calculate the distance in meter
+            distance  = self.__Calculate_Distance(E1 =self.FB_DataFrame["East[m].1"][x], E2 =self.FB_DataFrame["East[m].1"][x+1] , N1 =self.FB_DataFrame["North[m].1"][x] , N2 =self.FB_DataFrame["North[m].1"][x+1])
+            # calculate the time in sec
+            time = self.__Calculate_Time(t1 = self.FB_DataFrame["Timestamp[ms].1"][x] , t2 = self.FB_DataFrame["Timestamp[ms].1"][x+1])
+
+            # calculate the velocity in m/h
+            velocity = self.__Calculate_Velocity(d = distance , t =time)
+
+            self.velocity_store.append(velocity)
+
+            if velocity > 150 :
+                self.comparison_result.append("Failed")
+
+
+            else:
+                self.comparison_result.append("Passed")
+
+
+        self.comparison_result.append(self.comparison_result[-1])
+        self.FB_DataFrame["Velocity_Status"] = self.comparison_result
 
 
 
 
+    def Show_Failed_Velocity_Records(self) -> None:
+
+        ''' show the failed velocity records
+        INPUT: None
+        OUTPUT: None
+        '''
+        print(df.FB_DataFrame[df.FB_DataFrame["Velocity_Status"] == "Failed"])
 
 
 
+    def Show_Passed_Velocity_Records(self) -> None:
 
+        ''' show the failed velocity records
+        INPUT: None
+        OUTPUT: None
+        '''
+        print(df.FB_DataFrame[df.FB_DataFrame["Velocity_Status"] == "Passed"])
 
 
 
@@ -260,22 +313,18 @@ df = VUT_FileAnalysis("TRIAL_220616_110008_00401_FBl_26_AUTOSAVE.txt")
 df.Read_CSV_File()
 
 print(df.VUT_DataFrame.head())
-print(df.FB_DataFrame)
+print(df.FB_DataFrame.tail())
 
-print(df.VUT_DataFrame.isnull().sum() )
-print(df.FB_DataFrame.isnull().sum())
-print(df.FB_DataFrame)
-
-d= []
-
-d.append(d)
-
-print(d )
+df.Velocity_Assessment()
+df.Show_Failed_Velocity_Records()
 
 
-print(len(df.FB_DataFrame["East[m].1"]))
-print(df.FB_DataFrame.shape)
-df.FB_DataFrame.to_csv("FB.csv")
+
+#print(df.Calculate_Distance(E1 =df.FB_DataFrame["East[m].1"][0],E2 =df.FB_DataFrame["East[m].1"][1] ,N1 =df.FB_DataFrame["North[m].1"][0],N2 =df.FB_DataFrame["North[m].1"][1]) )
+#print(df.Calculate_Time(t1 = 2030 , t2 =2040))
+#d= df.Calculate_Distance(E1 =df.FB_DataFrame["East[m].1"][0],E2 =df.FB_DataFrame["East[m].1"][1] ,N1 =df.FB_DataFrame["North[m].1"][0],N2 =df.FB_DataFrame["North[m].1"][1])
+#t = df.Calculate_Time(t1 = 2030 , t2 =2040)
+#print(df.Calculate_Velocity(d  = d ,t=t))
 
 #plt.hist(df.FB_DataFrame["North[m].1"],bins = 2000)
 #plt.show()
