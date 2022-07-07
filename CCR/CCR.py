@@ -38,8 +38,14 @@ class VUT_FileAnalysis:
         self.VUT_Lat_NaN_Data = None
         self.VUT_Lng_NaN_Data = None
 
-        self.comparison_result = []
-        self.velocity_store = []
+
+        self.FB_FaildData = None
+        self.FB_PassedData = None
+
+        self.FB_FaildData_Count = 0
+        self.FB_PassedData_Count = 0
+
+
 
 
     # privite method
@@ -261,6 +267,9 @@ class VUT_FileAnalysis:
 
             OUTPUT: No return
         '''
+        comparison_result = []
+        velocity_store = []
+
 
         for x in range(0,self.FB_DataFrame.shape[0]-1,1): # 0 ---> FB_DataFrame.shape[0]-1
 
@@ -270,23 +279,30 @@ class VUT_FileAnalysis:
             time = self.__Calculate_Time(t1 = self.FB_DataFrame["Timestamp[ms].1"][x] , t2 = self.FB_DataFrame["Timestamp[ms].1"][x+1])
 
             # calculate the velocity in m/h
-            velocity = self.__Calculate_Velocity(d = distance , t =time)
+            velocity = self.__Calculate_Velocity(d = distance , t = time)
 
-            self.velocity_store.append(velocity)
+            velocity_store.append(velocity)
 
             if velocity > 150 :
-                self.comparison_result.append("Failed")
+                comparison_result.append("Failed")
+
 
 
             else:
-                self.comparison_result.append("Passed")
+                comparison_result.append("Passed")
+                self.FB_PassedData_Count = +1
 
+        comparison_result.append(comparison_result[-1])
+        velocity_store.append(velocity_store[-1])
 
-        self.comparison_result.append(self.comparison_result[-1])
-        self.FB_DataFrame["Velocity_Status"] = self.comparison_result
+        self.FB_DataFrame["Velocity_Status"] = comparison_result
+        self.FB_DataFrame["Velocity_"] = velocity_store
 
+        self.FB_FaildData = self.FB_DataFrame[self.FB_DataFrame["Velocity_Status"] == "Failed"]
+        self.FB_PassedData = self.FB_DataFrame[self.FB_DataFrame["Velocity_Status"] == "Passed"]
 
-
+        self.FB_FaildData_Count = self.FB_FaildData.shape[0] -1
+        self.FB_PassedData_Count = self.FB_PassedData.shape[0] -1
 
     def Show_Failed_Velocity_Records(self) -> None:
 
@@ -294,7 +310,7 @@ class VUT_FileAnalysis:
         INPUT: None
         OUTPUT: None
         '''
-        print(df.FB_DataFrame[df.FB_DataFrame["Velocity_Status"] == "Failed"])
+        print(self.FB_FaildData)
 
 
 
@@ -304,12 +320,12 @@ class VUT_FileAnalysis:
         INPUT: None
         OUTPUT: None
         '''
-        print(df.FB_DataFrame[df.FB_DataFrame["Velocity_Status"] == "Passed"])
+        print(self.FB_PassedData)
 
 
 
 # create object of type VUT_FileAnalysis
-df = VUT_FileAnalysis("TRIAL_220616_110008_00401_FBl_26_AUTOSAVE.txt")
+df = VUT_FileAnalysis("TRIAL_220616_110111_00403_FBl_26_AUTOSAVE.TRIAL")
 df.Read_CSV_File()
 
 print(df.VUT_DataFrame.head())
@@ -318,16 +334,30 @@ print(df.FB_DataFrame.tail())
 df.Velocity_Assessment()
 df.Show_Failed_Velocity_Records()
 
+print(df.FB_FaildData_Count , df.FB_PassedData_Count)
 
 
-#print(df.Calculate_Distance(E1 =df.FB_DataFrame["East[m].1"][0],E2 =df.FB_DataFrame["East[m].1"][1] ,N1 =df.FB_DataFrame["North[m].1"][0],N2 =df.FB_DataFrame["North[m].1"][1]) )
-#print(df.Calculate_Time(t1 = 2030 , t2 =2040))
-#d= df.Calculate_Distance(E1 =df.FB_DataFrame["East[m].1"][0],E2 =df.FB_DataFrame["East[m].1"][1] ,N1 =df.FB_DataFrame["North[m].1"][0],N2 =df.FB_DataFrame["North[m].1"][1])
-#t = df.Calculate_Time(t1 = 2030 , t2 =2040)
-#print(df.Calculate_Velocity(d  = d ,t=t))
+
+
+
+
+
+def main():
+    pass
+
+# construct interactive program ,all u need to pass the file name with respecting the file should be at the same program directory
+
+
+if __name__ == "__main__":
+	main()
+
+
+
+
 
 #plt.hist(df.FB_DataFrame["North[m].1"],bins = 2000)
 #plt.show()
+
 '''
 plt.subplot(1,2,1)
 df.FB_DataFrame.boxplot("North[m].1")
@@ -335,6 +365,7 @@ df.FB_DataFrame.boxplot("North[m].1")
 plt.subplot(1,2,2)
 df.FB_DataFrame.boxplot("East[m].1")
 plt.show()
+
 '''
 
 
