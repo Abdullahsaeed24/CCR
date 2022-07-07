@@ -38,10 +38,11 @@ class VUT_FileAnalysis:
         self.VUT_Lat_NaN_Data = None
         self.VUT_Lng_NaN_Data = None
 
-
+        # FB Faild and Passed Data bassed on the velocity comparison
         self.FB_FaildData = None
         self.FB_PassedData = None
 
+        # FB Faild and Passed Data counts
         self.FB_FaildData_Count = 0
         self.FB_PassedData_Count = 0
 
@@ -295,12 +296,15 @@ class VUT_FileAnalysis:
         comparison_result.append(comparison_result[-1])
         velocity_store.append(velocity_store[-1])
 
+        # create a new coulmns in the FB DataFrame and assign the comparison_result list and velocity_store ti them
         self.FB_DataFrame["Velocity_Status"] = comparison_result
         self.FB_DataFrame["Velocity_"] = velocity_store
 
+        # isolate the Faild Data and the Passed Data
         self.FB_FaildData = self.FB_DataFrame[self.FB_DataFrame["Velocity_Status"] == "Failed"]
         self.FB_PassedData = self.FB_DataFrame[self.FB_DataFrame["Velocity_Status"] == "Passed"]
 
+        # assign the Faild Data  and  Passed Data Counts
         self.FB_FaildData_Count = self.FB_FaildData.shape[0] -1
         self.FB_PassedData_Count = self.FB_PassedData.shape[0] -1
 
