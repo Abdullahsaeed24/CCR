@@ -288,10 +288,9 @@ class VUT_FileAnalysis:
                 comparison_result.append("Failed")
 
 
-
             else:
                 comparison_result.append("Passed")
-                self.FB_PassedData_Count = +1
+                
 
         comparison_result.append(comparison_result[-1])
         velocity_store.append(velocity_store[-1])
