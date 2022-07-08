@@ -257,7 +257,7 @@ class VUT_FileAnalysis:
 
 
 
-    def Velocity_Assessment(self) -> None:
+    def FB_Velocity_Assessment(self) -> None:
 
         ''' Calculate the distance , time diffrance between two points , velocity from point 1 to point 2
             and compare whether the velocity > 150 meter per hour or not if so assign its status as Failed otherwise Passed
@@ -290,7 +290,7 @@ class VUT_FileAnalysis:
 
             else:
                 comparison_result.append("Passed")
-                
+
 
         comparison_result.append(comparison_result[-1])
         velocity_store.append(velocity_store[-1])
@@ -334,10 +334,12 @@ df.Read_CSV_File()
 print(df.VUT_DataFrame.head())
 print(df.FB_DataFrame.tail())
 
-df.Velocity_Assessment()
+df.FB_Velocity_Assessment()
 df.Show_Failed_Velocity_Records()
 
 print(df.FB_FaildData_Count , df.FB_PassedData_Count)
+
+
 
 
 
