@@ -3,10 +3,8 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 import math
-import random
-import colorama
-from colorama import Fore
-
+import os
+import glob
 
 
 
@@ -260,7 +258,7 @@ class VUT_FileAnalysis:
     def FB_Velocity_Assessment(self) -> None:
 
         ''' Calculate the distance , time diffrance between two points , velocity from point 1 to point 2
-            and compare whether the velocity > 150 meter per hour or not if so assign its status as Failed otherwise Passed
+            and compare whether the velocity > 150 kilometer per hour or not if so assign its status as Failed otherwise Passed
             assign the calculated velocity in list called  ->> velocity_store
             asssign the status of the Velocity Assessment in list called ->> comparison_result
 
@@ -280,7 +278,7 @@ class VUT_FileAnalysis:
             time = self.__Calculate_Time(t1 = self.FB_DataFrame["Timestamp[ms].1"][x] , t2 = self.FB_DataFrame["Timestamp[ms].1"][x+1])
 
             # calculate the velocity in m/h
-            velocity = self.__Calculate_Velocity(d = distance , t = time)
+            velocity = self.__Calculate_Velocity(d = distance , t = time) * 0.001 # convert from m/h to km/h
 
             velocity_store.append(velocity)
 
@@ -327,8 +325,69 @@ class VUT_FileAnalysis:
 
 
 
+
+    def FB_Freezing_DataRecords(self) -> int:
+        '''
+        INPUT:
+        OUTPUT:
+        '''
+
+        TotalFreezingRecordsNumber = 0
+        FreezingRecordsNumber = 1
+
+
+
+        for x in range(0,len(self.FB_DataFrame["North[m].1"]),1): # 0 ---> 8
+
+
+            if x < len(self.FB_DataFrame["North[m].1"])-1:
+
+                if self.FB_DataFrame["North[m].1"][x] == self.FB_DataFrame["North[m].1"][x+1]:
+                    FreezingRecordsNumber = FreezingRecordsNumber + 1
+                    print("FreezingRecordsNumber ",FreezingRecordsNumber)
+
+                    if (x+1) == len(self.FB_DataFrame["North[m].1"])-1:
+
+                        if FreezingRecordsNumber >= 3:
+                            TotalFreezingRecordsNumber += FreezingRecordsNumber
+                            FreezingRecordsNumber = 1
+                            return TotalFreezingRecordsNumber
+
+
+
+
+                else:
+
+                    if FreezingRecordsNumber >= 3:
+
+                        TotalFreezingRecordsNumber += FreezingRecordsNumber
+                        FreezingRecordsNumber = 1
+                        print("\nTotalFreezingRecordsNumber ",TotalFreezingRecordsNumber,"\n")
+
+                    else:
+                        FreezingRecordsNumber = 1
+
+
+
+        return TotalFreezingRecordsNumber
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # create object of type VUT_FileAnalysis
-df = VUT_FileAnalysis("TRIAL_220616_110111_00403_FBl_26_AUTOSAVE.TRIAL")
+df = VUT_FileAnalysis("C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001.zip\4a_nasta\20220616\ccrs\-50\10\TRIAL_220616_110111_00403_FBl_26_AUTOSAVE.TRIAL")
 df.Read_CSV_File()
 
 print(df.VUT_DataFrame.head())
@@ -336,13 +395,14 @@ print(df.FB_DataFrame.tail())
 
 df.FB_Velocity_Assessment()
 df.Show_Failed_Velocity_Records()
-
-print(df.FB_FaildData_Count , df.FB_PassedData_Count)
-
+print(df.FB_DataFrame["North[m].1"].duplicated().sum())
 
 
 
+df.FB_DataFrame["North is duplicated"] = df.FB_DataFrame["North[m].1"].duplicated()
+d = df.FB_DataFrame[df.FB_DataFrame["North is duplicated"] == True]
 
+print(df.FB_Freezing_DataRecords())
 
 
 
