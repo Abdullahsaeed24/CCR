@@ -11,6 +11,22 @@ import glob
 
 class VUT_FileAnalysis:
 
+    Data = {"FilePath":[],
+            "%NaN":[],
+            "NuberOfFrozen_Signal":[],
+            "TimestampDrops":[],
+            "MaxTimestampDrops":[],
+
+            "JumpsInVelocity":[]}
+
+    FB_FilesDataResult = pd.DataFrame(Data)
+    #FB_FilesDataResult.to_csv("FB_Files_Data.csv")
+    #FB_FilesData = pd.read_csv("FB_Files_Data.csv")
+
+    File_Number = 0
+
+    FilesDataResult = None
+
     def __init__(self,FileleName:"str") -> None:
 
         ''' class instance Constractor
@@ -28,6 +44,10 @@ class VUT_FileAnalysis:
         self.FB_DataFrame = None
         self.VUT_DataFrame = None
 
+        self.FB_RowsNum_Befor_drop = None
+        self.VUT_RowsNum_Befor_drop = None
+
+
         # FB NaN Variables
         self.FB_Lat_NaN_Data = None
         self.FB_Lng_NaN_Data = None
@@ -43,6 +63,14 @@ class VUT_FileAnalysis:
         # FB Faild and Passed Data counts
         self.FB_FaildData_Count = 0
         self.FB_PassedData_Count = 0
+
+        self.TotalFrozenRecordsNumber = None
+        self.NumberOfDrops = None
+        self.MaxNumberOfDrops = None
+
+
+
+
 
 
 
@@ -96,22 +124,36 @@ class VUT_FileAnalysis:
         '''
 
         self.__FileData_Handling()
+
         try:
-            self.DataFrame = pd.read_csv(self.FileleName , sep = ";" , skiprows = self.__Get_Headers_Length())
+            self.DataFrame = pd.read_csv(self.FileleName ,sep = ";" , skiprows = self.__Get_Headers_Length())
 
             # isolating the data of the file
             self.Expected_DataFrame = self.DataFrame.loc[:,"Name":"East[m]"]
             self.FB_DataFrame = self.DataFrame.loc[:,"Name.1":"DistanceFromOrigin[m]"]
             self.VUT_DataFrame = self.DataFrame.loc[:,"Name.2":]
 
-            #self.FB_DataFrame.fillna(method = 'backfill', axis = 0)
-            #self.VUT_DataFrame.fillna(method = 'backfill', axis = 0)
 
             # delete the Information column in both VUT and FB DataFrame because it's entirly contain the NaN values so it's useless
             del(self.FB_DataFrame["Information.1"])
             del(self.VUT_DataFrame["Information.2"])
 
-            # delete the NaN values in the rest of coulmns
+            # assign the rows number befor dropping data
+            self.FB_RowsNum_Befor_drop = self.FB_DataFrame.shape[0]
+            self.VUT_RowsNum_Befor_drop = self.VUT_DataFrame.shape[0]
+
+            # assign the FB Latitude NaN Data and  FB Langitude NaN Data
+            self.FB_Lat_NaN_Data = self.FB_DataFrame["Lat[wgs84].1"].isnull().sum()
+            self.FB_Lng_NaN_Data = self.FB_DataFrame["Lng[wgs84].1"].isnull().sum()
+
+
+            # assign the FB Latitude NaN Data and  FB Langitude NaN Data
+            self.VUT_Lat_NaN_Data = self.VUT_DataFrame["Lat[wgs84].2"].isnull().sum()
+            self.VUT_Lng_NaN_Data = self.VUT_DataFrame["Lng[wgs84].2"].isnull().sum()
+
+
+
+            # delete the NaN values in the rest of coulmns - Delete the NaN data for all row
             self.FB_DataFrame.dropna(axis = 0,inplace = True)
 
             # reset the data index
@@ -121,15 +163,14 @@ class VUT_FileAnalysis:
             self.VUT_DataFrame.fillna(method = 'backfill', axis = 0,inplace = True)
 
 
-            self.FB_Lat_NaN_Data = self.FB_DataFrame["Lat[wgs84].1"].isnull().sum()
-            self.FB_Lng_NaN_Data = self.FB_DataFrame["Lng[wgs84].1"].isnull().sum()
 
-            self.VUT_Lat_NaN_Data = self.VUT_DataFrame["Lat[wgs84].2"].isnull().sum()
-            self.VUT_Lng_NaN_Data = self.VUT_DataFrame["Lng[wgs84].2"].isnull().sum()
+
 
 
         except:
             print("PLEASE Note THAT the FILE Might be Corrupted")
+
+
 
 
 
@@ -263,9 +304,10 @@ class VUT_FileAnalysis:
             asssign the status of the Velocity Assessment in list called ->> comparison_result
 
             INPUT: None
-
             OUTPUT: No return
         '''
+
+
         comparison_result = []
         velocity_store = []
 
@@ -302,8 +344,8 @@ class VUT_FileAnalysis:
         self.FB_PassedData = self.FB_DataFrame[self.FB_DataFrame["Velocity_Status"] == "Passed"]
 
         # assign the Faild Data  and  Passed Data Counts
-        self.FB_FaildData_Count = self.FB_FaildData.shape[0] -1
-        self.FB_PassedData_Count = self.FB_PassedData.shape[0] -1
+        self.FB_FaildData_Count = self.FB_FaildData.shape[0]
+        self.FB_PassedData_Count = self.FB_PassedData.shape[0]
 
     def Show_Failed_Velocity_Records(self) -> None:
 
@@ -326,7 +368,7 @@ class VUT_FileAnalysis:
 
 
 
-    def FB_Freezing_DataRecords(self) -> int:
+    def FB_Frozen_DataRecords(self) -> None:
         '''
         INPUT:
         OUTPUT:
@@ -344,11 +386,11 @@ class VUT_FileAnalysis:
 
                 if self.FB_DataFrame["North[m].1"][x] == self.FB_DataFrame["North[m].1"][x+1]:
                     FreezingRecordsNumber = FreezingRecordsNumber + 1
-                    print("FreezingRecordsNumber ",FreezingRecordsNumber)
+                    #print("FreezingRecordsNumber ",FreezingRecordsNumber)
 
                     if (x+1) == len(self.FB_DataFrame["North[m].1"])-1:
 
-                        if FreezingRecordsNumber >= 3:
+                        if FreezingRecordsNumber >= 5:
                             TotalFreezingRecordsNumber += FreezingRecordsNumber
                             FreezingRecordsNumber = 1
                             return TotalFreezingRecordsNumber
@@ -362,21 +404,126 @@ class VUT_FileAnalysis:
 
                         TotalFreezingRecordsNumber += FreezingRecordsNumber
                         FreezingRecordsNumber = 1
-                        print("\nTotalFreezingRecordsNumber ",TotalFreezingRecordsNumber,"\n")
+                        #print("\nTotalFreezingRecordsNumber ",TotalFreezingRecordsNumber,"--->",self.FB_DataFrame["North[m].1"][x],"\n")
 
                     else:
                         FreezingRecordsNumber = 1
 
 
-
-        return TotalFreezingRecordsNumber
-
-
+        self.TotalFrozenRecordsNumber = TotalFreezingRecordsNumber
+        #return TotalFreezingRecordsNumber
 
 
 
 
 
+    def FB_TimeStamp_Drops(self):
+        '''
+
+
+        INPUT:
+        OUTPUT:
+        '''
+
+        NumberOfDrops = 0
+        MaxNumberOfDrops = 0
+        TimeStampDiffrance = 0
+
+        for x in range(0,len(self.FB_DataFrame["Timestamp[ms].1"]),1):
+
+            # critical condition
+            if (x+1) == (len(self.FB_DataFrame["Timestamp[ms].1"])-1):
+
+                TimeStampDiffrance = self.FB_DataFrame["Timestamp[ms].1"][x+1] - self.FB_DataFrame["Timestamp[ms].1"][x]
+
+                if TimeStampDiffrance > 10:
+                    NumberOfDrops= NumberOfDrops + 1
+                    #print("NumberOfDrops = ",NumberOfDrops)
+
+                    if TimeStampDiffrance > MaxNumberOfDrops:
+                        MaxNumberOfDrops = TimeStampDiffrance
+
+                    else:
+                        pass
+
+                    #print("MaxNumberOfDrops = {}\nNumberOfDrops = {}".format(MaxNumberOfDrops,NumberOfDrops))
+                    break
+
+
+            # for safty
+            elif (x+1) > (len(self.FB_DataFrame["Timestamp[ms].1"])-1):
+                 break
+
+
+            # if x+1 < len(self.FB_DataFrame["Timestamp[ms].1"])-1
+            else:
+
+                TimeStampDiffrance = self.FB_DataFrame["Timestamp[ms].1"][x+1] - self.FB_DataFrame["Timestamp[ms].1"][x]
+                #print("TimeStampDiffrance = ",TimeStampDiffrance)
+                if TimeStampDiffrance > 10:
+                    NumberOfDrops= NumberOfDrops+1
+                    #print("NumberOfDrops = ",NumberOfDrops)
+
+                if TimeStampDiffrance > MaxNumberOfDrops:
+                    MaxNumberOfDrops = TimeStampDiffrance
+
+        #print("MaxNumberOfDrops = {}\nNumberOfDrops = {}".format(MaxNumberOfDrops,NumberOfDrops))
+
+        self.NumberOfDrops = NumberOfDrops
+        self.MaxNumberOfDrops = MaxNumberOfDrops
+
+
+    def x(self):
+
+        fbfilenamelist = []
+        fbnanlist = []
+        fbfrozenlist = []
+        fbtimestamp = []
+        fbmaxtimestamp = []
+        fbvelocity = []
+
+
+
+        # assign file name
+        fbfilenamelist.append(self.FileleName)
+        VUT_FileAnalysis.FB_FilesDataResult["FilePath"] = fbfilenamelist
+
+        # assign % of NaN data in the FB data
+
+        if self.FB_Lat_NaN_Data > self.FB_Lng_NaN_Data:
+            FB_NAN = self.FB_Lat_NaN_Data
+
+        elif self.FB_Lat_NaN_Data < self.FB_Lng_NaN_Data:
+            FB_NAN = self.FB_Lng_NaN_Data
+
+        # this mean that they are equal to each
+        else:
+            FB_NAN = self.FB_Lat_NaN_Data
+
+
+        FB_NAN = ( FB_NAN /self.FB_RowsNum_Befor_drop)* 100
+        fbnanlist.append(FB_NAN)
+        VUT_FileAnalysis.FB_FilesDataResult["%NaN"] = fbnanlist
+
+        # assign number of frozen data
+        self.FB_Frozen_DataRecords()
+        fbfrozenlist.append(self.TotalFrozenRecordsNumber)
+        VUT_FileAnalysis.FB_FilesDataResult["NuberOfFrozen_Signal"] = fbfrozenlist
+
+        # assign number of drops
+        self.FB_TimeStamp_Drops();
+        fbtimestamp.append(self.NumberOfDrops)
+        VUT_FileAnalysis.FB_FilesDataResult["TimestampDrops"]=fbtimestamp
+
+        fbmaxtimestamp.append(self.MaxNumberOfDrops)
+        VUT_FileAnalysis.FB_FilesDataResult["MaxTimestampDrops"] = fbmaxtimestamp
+
+        # assign number jumps in velocity
+        self.FB_Velocity_Assessment()
+
+        fbvelocity.append(self.FB_FaildData_Count)
+        VUT_FileAnalysis.FB_FilesDataResult["JumpsInVelocity"] = fbvelocity
+        VUT_FileAnalysis.File_Number = VUT_FileAnalysis.File_Number + 1
 
 
 
@@ -387,22 +534,17 @@ class VUT_FileAnalysis:
 
 
 # create object of type VUT_FileAnalysis
-df = VUT_FileAnalysis("C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001.zip\4a_nasta\20220616\ccrs\-50\10\TRIAL_220616_110111_00403_FBl_26_AUTOSAVE.TRIAL")
+df = VUT_FileAnalysis(r"C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001\4a_nasta\20220616\ccrs\-50\10\TRIAL_220616_110111_00403_FBl_26_AUTOSAVE.TRIAL")
 df.Read_CSV_File()
-
-print(df.VUT_DataFrame.head())
-print(df.FB_DataFrame.tail())
-
-df.FB_Velocity_Assessment()
-df.Show_Failed_Velocity_Records()
-print(df.FB_DataFrame["North[m].1"].duplicated().sum())
+df.x()
 
 
 
-df.FB_DataFrame["North is duplicated"] = df.FB_DataFrame["North[m].1"].duplicated()
-d = df.FB_DataFrame[df.FB_DataFrame["North is duplicated"] == True]
+print(VUT_FileAnalysis.FB_FilesDataResult)
 
-print(df.FB_Freezing_DataRecords())
+
+
+
 
 
 

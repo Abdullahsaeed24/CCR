@@ -1,0 +1,25 @@
+,%NaN,NuberOfFrozen_Signal,TimestampDrops,MaxTimestampDrops,JumpsInVelocity
+0,"index                    0.0
+Name.1                   0.0
+Timestamp[ms].1          0.0
+Date[MM.dd.yyyy].1       0.0
+Time[hh:mm:ss.fff].1     0.0
+Gpstime[ms].1            0.0
+GnssStatus.1             0.0
+Lat[wgs84].1             0.0
+Lng[wgs84].1             0.0
+Height[m].1              0.0
+Heading[°].1             0.0
+Velocity[m/s].1          0.0
+Velocity[km/h].1         0.0
+Acceleration[m/s²].1     0.0
+North[m].1               0.0
+East[m].1                0.0
+Distance[m]              0.0
+YawRate[deg/s]           0.0
+vY[m/s]                  0.0
+Lateral Distance[m]      0.0
+Forward Distance[m]      0.0
+GeoDistance[m]           0.0
+DistanceFromOrigin[m]    0.0
+dtype: float64",104,243,70.0,-1
