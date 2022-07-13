@@ -6,12 +6,12 @@ import math
 import os
 import glob
 
-
+import shutil
 
 
 class VUT_FileAnalysis:
 
-    Data = {"FilePath":[],
+    FB_FilesDataResult = {"FilePath":[],
             "%NaN":[],
             "NuberOfFrozen_Signal":[],
             "TimestampDrops":[],
@@ -19,7 +19,7 @@ class VUT_FileAnalysis:
 
             "JumpsInVelocity":[]}
 
-    FB_FilesDataResult = pd.DataFrame(Data)
+
     #FB_FilesDataResult.to_csv("FB_Files_Data.csv")
     #FB_FilesData = pd.read_csv("FB_Files_Data.csv")
 
@@ -163,12 +163,9 @@ class VUT_FileAnalysis:
             self.VUT_DataFrame.fillna(method = 'backfill', axis = 0,inplace = True)
 
 
-
-
-
-
-        except:
-            print("PLEASE Note THAT the FILE Might be Corrupted")
+        except  Exception as e:
+            print("File Name is :",self.FileleName)
+            print("PLEASE Note THAT the FILE Might be Corrupted ,{}".format(e))
 
 
 
@@ -473,20 +470,27 @@ class VUT_FileAnalysis:
         self.MaxNumberOfDrops = MaxNumberOfDrops
 
 
-    def x(self):
 
-        fbfilenamelist = []
-        fbnanlist = []
-        fbfrozenlist = []
-        fbtimestamp = []
-        fbmaxtimestamp = []
-        fbvelocity = []
 
+
+    def Collect_Facts(self):
+
+        if VUT_FileAnalysis.File_Number == 0:
+
+            VUT_FileAnalysis.FB_FilesDataResult = {"FilePath":[],
+                    "%NaN":[],
+                    "NuberOfFrozen_Signal":[],
+                    "TimestampDrops":[],
+                    "MaxTimestampDrops":[],
+
+                    "JumpsInVelocity":[]}
+
+        else:
+            pass
 
 
         # assign file name
-        fbfilenamelist.append(self.FileleName)
-        VUT_FileAnalysis.FB_FilesDataResult["FilePath"] = fbfilenamelist
+        VUT_FileAnalysis.FB_FilesDataResult["FilePath"].append(self.FileleName)
 
         # assign % of NaN data in the FB data
 
@@ -502,59 +506,135 @@ class VUT_FileAnalysis:
 
 
         FB_NAN = ( FB_NAN /self.FB_RowsNum_Befor_drop)* 100
-        fbnanlist.append(FB_NAN)
-        VUT_FileAnalysis.FB_FilesDataResult["%NaN"] = fbnanlist
+        VUT_FileAnalysis.FB_FilesDataResult["%NaN"].append(FB_NAN)
 
         # assign number of frozen data
         self.FB_Frozen_DataRecords()
-        fbfrozenlist.append(self.TotalFrozenRecordsNumber)
-        VUT_FileAnalysis.FB_FilesDataResult["NuberOfFrozen_Signal"] = fbfrozenlist
+
+        VUT_FileAnalysis.FB_FilesDataResult["NuberOfFrozen_Signal"].append(self.TotalFrozenRecordsNumber)
 
         # assign number of drops
         self.FB_TimeStamp_Drops();
-        fbtimestamp.append(self.NumberOfDrops)
-        VUT_FileAnalysis.FB_FilesDataResult["TimestampDrops"]=fbtimestamp
 
-        fbmaxtimestamp.append(self.MaxNumberOfDrops)
-        VUT_FileAnalysis.FB_FilesDataResult["MaxTimestampDrops"] = fbmaxtimestamp
+        VUT_FileAnalysis.FB_FilesDataResult["TimestampDrops"].append(self.NumberOfDrops)
+
+        VUT_FileAnalysis.FB_FilesDataResult["MaxTimestampDrops"].append(self.MaxNumberOfDrops)
 
         # assign number jumps in velocity
         self.FB_Velocity_Assessment()
+        VUT_FileAnalysis.FB_FilesDataResult["JumpsInVelocity"].append(self.FB_FaildData_Count)
 
-        fbvelocity.append(self.FB_FaildData_Count)
-        VUT_FileAnalysis.FB_FilesDataResult["JumpsInVelocity"] = fbvelocity
-        VUT_FileAnalysis.File_Number = VUT_FileAnalysis.File_Number + 1
-
+        #-----------------------------------------------------------------------------
 
 
-
+        VUT_FileAnalysis.File_Number = self.File_Number+1
 
 
 
 
 
-# create object of type VUT_FileAnalysis
-df = VUT_FileAnalysis(r"C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001\4a_nasta\20220616\ccrs\-50\10\TRIAL_220616_110111_00403_FBl_26_AUTOSAVE.TRIAL")
-df.Read_CSV_File()
-df.x()
+#********************************************************************************************************************************#
+#*--------------------------------------------------- Trial_Files_Processing ----------------------------------------------------#
+#********************************************************************************************************************************#
+
+
+def Trial_Files_Processing(FolderPath:str)-> None:
+
+
+    """process the TRIAL_files and store the result in DataFrame then convert the DataFrame to csv file and store it in FolderPath
+       the file content after processing as following:
+
+
+                        FilePath                      %NaN        NuberOfFrozen_Signal       TimestampDrops    MaxTimestampDrops      JumpsInVelocity
+             ********--FileNPath--*********           6.9807             80                          20                 12                   10
+
+       INPUT: FolderPath the folder directory
+       OUTPUT: None -->  No return values but there is CSV File written in the directory
+    """
+
+
+    # Collect all TRIAL Files in the FolderPath and store them in TRIAL_files (Files Names)
+    try:
+        TRIAL_files = glob.glob(os.path.join(FolderPath, "*.TRIAL"))
+    except:
+        pass
+
+
+    # define DataFrame Variable
+    DataFrame = None
+
+    try:
+        # loop over the list of TRIAL_files Names
+        for file in TRIAL_files:
+
+            # create VUT_FileAnalysis object to process the passed file
+            DataFrame = VUT_FileAnalysis(file)
+            DataFrame.Read_CSV_File()
+            DataFrame.Collect_Facts()
+
+            # NOTE: VUT_FileAnalysis.FB_FilesDataFrame and VUT_FileAnalysis.FB_FilesDataResult are class Variables which mean they are shared between all class instances
+            # Convert the VUT_FileAnalysis.FB_FilesDataResult dictionary into VUT_FileAnalysis.FB_FilesDataFrame DataFrame
+            VUT_FileAnalysis.FB_FilesDataFrame = pd.DataFrame(VUT_FileAnalysis.FB_FilesDataResult)
+
+    except:
+        pass
+
+
+    # Exception
+    try:
+        # convert the DataFrame to CSV File
+        VUT_FileAnalysis.FB_FilesDataFrame.to_csv("Folder_Data.csv")
+        # asssign "Folder_Data.csv" file directory to original
+        original = r"C:\Users\aismail2\Documents\GitHub\CCR\CCR\Folder_Data.csv"
+        # assign the FolderPath to target Variable to move the csv file from script directory to FolderPath
+        target = FolderPath+"\FolderResult.csv"
+        # move the csv file from script directory to FolderPath
+        shutil.move(original, target)
+
+    except:
+        print("There is an Error")
+
+
+    # clear the dictionary to make it ready to another folder data
+    VUT_FileAnalysis.FB_FilesDataResult.clear()
+
+    # reset the Files_Number Variable
+    VUT_FileAnalysis.File_Number=0
+
+    # reset the data DataFrame Variable
+    VUT_FileAnalysis.FB_FilesDataFrame = None
 
 
 
-print(VUT_FileAnalysis.FB_FilesDataResult)
 
 
 
 
 
+#path = r"C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001\4a_nasta\20220616\ccrs\-50\\"+"80"
 
+#Trial_Files_Processing(path)
+
+#path = r"C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001\4a_nasta\20220623\cpla\50"
+#Trial_Files_Processing(path)
+
+
+rootdir = r"C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001\4a_nasta"
+dirlist = []
+for rootdir, dirs, files in os.walk(rootdir):
+    for subdir in dirs:
+        dirlist.append(os.path.join(rootdir, subdir))
+
+
+
+for x in dirlist:
+    Trial_Files_Processing(x)
 
 
 def main():
     pass
 
 # construct interactive program ,all u need to pass the file name with respecting the file should be at the same program directory
-
-
 if __name__ == "__main__":
 	main()
 
