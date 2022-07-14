@@ -138,7 +138,7 @@ class VUT_FileAnalysis:
         self.__FileData_Handling()
 
         try:
-            self.DataFrame = pd.read_csv(self.FileleName ,sep = ";" , skiprows = self.__Get_Headers_Length())
+            self.DataFrame = pd.read_csv(self.FileleName ,sep = ";" ,on_bad_lines='skip' ,skiprows = self.__Get_Headers_Length())
 
             # isolating the data of the file
             self.Expected_DataFrame = self.DataFrame.loc[:,"Name":"East[m]"]
@@ -580,8 +580,8 @@ def Trial_Files_Processing(FolderPath:str)-> None:
             VUT_FileAnalysis.FilesDataResult = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in VUT_FileAnalysis.FB_FilesDataResult.items() ]))
             #VUT_FileAnalysis.FB_FilesDataFrame = pd.DataFrame(VUT_FileAnalysis.FB_FilesDataResult)
 
-    except:
-        pass
+    except Exception as e:
+        print(e)
 
 
     if(os.path.exists(FolderPath+"\FolderResult.csv") and os.path.isfile(FolderPath+"\FolderResult.csv")):
@@ -598,8 +598,8 @@ def Trial_Files_Processing(FolderPath:str)-> None:
         # move the csv file from script directory to FolderPath
         shutil.move(original, target)
 
-    except:
-        print("There is an Error")
+    except Exception as e:
+        print("There is an Error {}",format(e))
 
 
     # clear the dictionary to make it ready to another folder data
