@@ -5,9 +5,11 @@ from matplotlib import pyplot as plt
 import math
 import os
 import glob
-
 import shutil
 
+
+FolderName = "Folder_Data.csv"
+OldFolderName = None
 
 class VUT_FileAnalysis:
 
@@ -19,14 +21,24 @@ class VUT_FileAnalysis:
 
             "JumpsInVelocity":[]}
 
+    ALL_FB_FilesDataResult = {"FilePath":[],
+            "%NaN":[],
+            "NuberOfFrozen_Signal":[],
+            "TimestampDrops":[],
+            "MaxTimestampDrops":[],
 
-    #FB_FilesDataResult.to_csv("FB_Files_Data.csv")
-    #FB_FilesData = pd.read_csv("FB_Files_Data.csv")
+            "JumpsInVelocity":[]}
+
+
+    FB_FilesERRORS = {"FilePath":[],
+            "Error":[],}
+
+
 
     File_Number = 0
-
     FilesDataResult = None
-
+    ALLFilesDataResult = None
+    ALLFilesErrors = None
     def __init__(self,FileleName:"str") -> None:
 
         ''' class instance Constractor
@@ -164,6 +176,9 @@ class VUT_FileAnalysis:
 
 
         except  Exception as e:
+
+            VUT_FileAnalysis.FB_FilesERRORS["FilePath"].append(self.FileleName)
+            VUT_FileAnalysis.FB_FilesERRORS["Error"].append(e)
             print("File Name is :",self.FileleName)
             print("PLEASE Note THAT the FILE Might be Corrupted ,{}".format(e))
 
@@ -197,10 +212,8 @@ class VUT_FileAnalysis:
 
         ''' Show NaN Data in the given data Segment(VUT or FB) with the certain column and Show
             messages if inputs are wrong and also show some guides
-
         INPUT: data_seg:str -> either VUT or FB
                column:str -> data column in the data Segment
-
         OUTPUT: (int) Number of NaN Values in the passed data Segment
         '''
         data_seg = data_seg.upper()
@@ -237,14 +250,11 @@ class VUT_FileAnalysis:
         ''' Calculate the distance based on given parameters
         E -> East  (m)
         N -> North (m)
-
         (E1,N1) , (E2,N2)
         D^2 = (E2 - E1)^2 + (N2 - N1)^2
         d = sqrt(D^2)
-
         INPUT: Location N coordinates (E1 , N1)
                Location N+1 coordinates (E2 , N2)
-
         OUTPUT: return Distance  in meters
         '''
 
@@ -262,12 +272,9 @@ class VUT_FileAnalysis:
     def __Calculate_Time(self ,**timestamp) -> float:
 
         ''' Calculate the time based on given parameters
-
         t1 -> time at Location 1 coordinates time in msec
         t2 -> time at Location 2 coordinates time in msec
-
         INPUT: t1 , t2
-
         OUTPUT: return time diffrance between t2-t1 in sec
         '''
         time  =  abs(timestamp['t2'] - timestamp['t1']) / 1000 # time convertion from msec into sec
@@ -280,12 +287,9 @@ class VUT_FileAnalysis:
     def __Calculate_Velocity(self , **data) -> float:
 
         ''' Calculate the Velocity , Velocity should be in m/h (meter per hours)
-
         INPUT: d -> distance
                t -> time
-
         OUTPUT: return Velocity
-
         '''
         return (data['d'] / data['t']) * 3600  # convertion from m/sec into m/h
 
@@ -299,7 +303,6 @@ class VUT_FileAnalysis:
             and compare whether the velocity > 150 kilometer per hour or not if so assign its status as Failed otherwise Passed
             assign the calculated velocity in list called  ->> velocity_store
             asssign the status of the Velocity Assessment in list called ->> comparison_result
-
             INPUT: None
             OUTPUT: No return
         '''
@@ -317,7 +320,7 @@ class VUT_FileAnalysis:
             time = self.__Calculate_Time(t1 = self.FB_DataFrame["Timestamp[ms].1"][x] , t2 = self.FB_DataFrame["Timestamp[ms].1"][x+1])
 
             # calculate the velocity in m/h
-            velocity = self.__Calculate_Velocity(d = distance , t = time) * 0.001 # convert from m/h to km/h
+            velocity = self.__Calculate_Velocity(d = distance , t = time)*0.001 # convert from m/h to km/h
 
             velocity_store.append(velocity)
 
@@ -416,8 +419,6 @@ class VUT_FileAnalysis:
 
     def FB_TimeStamp_Drops(self):
         '''
-
-
         INPUT:
         OUTPUT:
         '''
@@ -491,6 +492,7 @@ class VUT_FileAnalysis:
 
         # assign file name
         VUT_FileAnalysis.FB_FilesDataResult["FilePath"].append(self.FileleName)
+        VUT_FileAnalysis.ALL_FB_FilesDataResult["FilePath"].append(self.FileleName)
 
         # assign % of NaN data in the FB data
 
@@ -507,24 +509,28 @@ class VUT_FileAnalysis:
 
         FB_NAN = ( FB_NAN /self.FB_RowsNum_Befor_drop)* 100
         VUT_FileAnalysis.FB_FilesDataResult["%NaN"].append(FB_NAN)
+        VUT_FileAnalysis.ALL_FB_FilesDataResult["%NaN"].append(FB_NAN)
 
         # assign number of frozen data
         self.FB_Frozen_DataRecords()
 
         VUT_FileAnalysis.FB_FilesDataResult["NuberOfFrozen_Signal"].append(self.TotalFrozenRecordsNumber)
+        VUT_FileAnalysis.ALL_FB_FilesDataResult["NuberOfFrozen_Signal"].append(self.TotalFrozenRecordsNumber)
 
         # assign number of drops
         self.FB_TimeStamp_Drops();
 
         VUT_FileAnalysis.FB_FilesDataResult["TimestampDrops"].append(self.NumberOfDrops)
+        VUT_FileAnalysis.ALL_FB_FilesDataResult["TimestampDrops"].append(self.NumberOfDrops)
 
         VUT_FileAnalysis.FB_FilesDataResult["MaxTimestampDrops"].append(self.MaxNumberOfDrops)
+        VUT_FileAnalysis.ALL_FB_FilesDataResult["MaxTimestampDrops"].append(self.MaxNumberOfDrops)
 
         # assign number jumps in velocity
         self.FB_Velocity_Assessment()
         VUT_FileAnalysis.FB_FilesDataResult["JumpsInVelocity"].append(self.FB_FaildData_Count)
-
-        #-----------------------------------------------------------------------------
+        VUT_FileAnalysis.ALL_FB_FilesDataResult["JumpsInVelocity"].append(self.FB_FaildData_Count)
+        #----------------------------------------------------------------------------------------------------
 
 
         VUT_FileAnalysis.File_Number = self.File_Number+1
@@ -543,11 +549,8 @@ def Trial_Files_Processing(FolderPath:str)-> None:
 
     """process the TRIAL_files and store the result in DataFrame then convert the DataFrame to csv file and store it in FolderPath
        the file content after processing as following:
-
-
                         FilePath                      %NaN        NuberOfFrozen_Signal       TimestampDrops    MaxTimestampDrops      JumpsInVelocity
              ********--FileNPath--*********           6.9807             80                          20                 12                   10
-
        INPUT: FolderPath the folder directory
        OUTPUT: None -->  No return values but there is CSV File written in the directory
     """
@@ -574,16 +577,20 @@ def Trial_Files_Processing(FolderPath:str)-> None:
 
             # NOTE: VUT_FileAnalysis.FB_FilesDataFrame and VUT_FileAnalysis.FB_FilesDataResult are class Variables which mean they are shared between all class instances
             # Convert the VUT_FileAnalysis.FB_FilesDataResult dictionary into VUT_FileAnalysis.FB_FilesDataFrame DataFrame
-            VUT_FileAnalysis.FB_FilesDataFrame = pd.DataFrame(VUT_FileAnalysis.FB_FilesDataResult)
+            VUT_FileAnalysis.FilesDataResult = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in VUT_FileAnalysis.FB_FilesDataResult.items() ]))
+            #VUT_FileAnalysis.FB_FilesDataFrame = pd.DataFrame(VUT_FileAnalysis.FB_FilesDataResult)
 
     except:
         pass
 
 
+    if(os.path.exists(FolderPath+"\FolderResult.csv") and os.path.isfile(FolderPath+"\FolderResult.csv")):
+        os.remove(FolderPath+"\FolderResult.csv")
     # Exception
+
     try:
         # convert the DataFrame to CSV File
-        VUT_FileAnalysis.FB_FilesDataFrame.to_csv("Folder_Data.csv")
+        VUT_FileAnalysis.FilesDataResult.to_csv("Folder_Data.csv")
         # asssign "Folder_Data.csv" file directory to original
         original = r"C:\Users\aismail2\Documents\GitHub\CCR\CCR\Folder_Data.csv"
         # assign the FolderPath to target Variable to move the csv file from script directory to FolderPath
@@ -602,27 +609,17 @@ def Trial_Files_Processing(FolderPath:str)-> None:
     VUT_FileAnalysis.File_Number=0
 
     # reset the data DataFrame Variable
-    VUT_FileAnalysis.FB_FilesDataFrame = None
+    VUT_FileAnalysis.FilesDataResult = None
 
 
 
-
-
-
-
-
-#path = r"C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001\4a_nasta\20220616\ccrs\-50\\"+"80"
-
-#Trial_Files_Processing(path)
-
-#path = r"C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001\4a_nasta\20220623\cpla\50"
-#Trial_Files_Processing(path)
 
 
 rootdir = r"C:\Users\aismail2\Downloads\4a_nasta-20220627T102722Z-001\4a_nasta"
 dirlist = []
 for rootdir, dirs, files in os.walk(rootdir):
     for subdir in dirs:
+        print(os.path.join(rootdir, subdir))
         dirlist.append(os.path.join(rootdir, subdir))
 
 
@@ -631,9 +628,57 @@ for x in dirlist:
     Trial_Files_Processing(x)
 
 
-def main():
+if(os.path.exists("Folder_Data.csv") and os.path.isfile("Folder_Data.csv")):
+    os.remove("Folder_Data.csv")
+
+if(os.path.exists("FolderData.csv") and os.path.isfile("FolderData.csv")):
+    os.remove("FolderData.csv")
+    print("file deleted")
+
+VUT_FileAnalysis.ALL_FB_FilesDataFrame = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in VUT_FileAnalysis.ALL_FB_FilesDataResult.items() ]))
+print(VUT_FileAnalysis.ALL_FB_FilesDataFrame)
+
+
+
+try:
+
+    if(FolderName == "Folder_Data.csv"):
+        OldFolderName = "Folder_Data.csv"
+        if(os.path.exists("Folder_Data.csv") and os.path.isfile("Folder_Data.csv")):
+            os.remove("Folder_Data.csv")
+        FolderName = "FolderData.csv"
+
+    else:
+        if(os.path.exists("FolderData.csv") and os.path.isfile("FolderData.csv")):
+            os.remove("FolderData.csv")
+        FolderName = "FolderData.csv"
+
+    # convert the DataFrame to CSV File
+    VUT_FileAnalysis.ALL_FB_FilesDataFrame.to_csv(FolderName)
+
+
+except:
+    print("delete error")
     pass
 
+
+VUT_FileAnalysis.ALLFilesErrors = pd.DataFrame( VUT_FileAnalysis.FB_FilesERRORS)
+print(VUT_FileAnalysis.ALLFilesErrors)
+VUT_FileAnalysis.FB_FilesERRORS = {"FilePath":[],
+            "Error":[],}
+
+if(os.path.exists("FILES_ERRORS.csv") and os.path.isfile("FILES_ERRORS.csv")):
+    os.remove("FILES_ERRORS.csv")
+try:
+    VUT_FileAnalysis.ALLFilesErrors.to_csv("FILES_ERRORS.csv")
+except:
+    pass
+
+
+
+
+def main():
+    pass
 # construct interactive program ,all u need to pass the file name with respecting the file should be at the same program directory
 if __name__ == "__main__":
 	main()
@@ -648,11 +693,9 @@ if __name__ == "__main__":
 '''
 plt.subplot(1,2,1)
 df.FB_DataFrame.boxplot("North[m].1")
-
 plt.subplot(1,2,2)
 df.FB_DataFrame.boxplot("East[m].1")
 plt.show()
-
 '''
 
 
@@ -660,14 +703,11 @@ plt.show()
 # PLOTING THE NaN Values in VUT and FB
 VUTx = ["VUT Latitude","VUT Logitude"]
 VUTy = [df.VUT_Lat_NaN_Data , df.VUT_Lng_NaN_Data]
-
 FBx = ["FB Latitude","FB Logitude"]
 FBy = [df.FB_Lat_NaN_Data,df.FB_Lng_NaN_Data]
-
 plt.subplot(1,2,1)
 plt.bar(VUTx,VUTy, color = 'red', edgecolor='black')
 plt.title('NAN in VUT Data')
-
 plt.subplot(1,2,2)
 plt.bar(FBx,FBy,color = 'blue',edgecolor='black')
 plt.title('NAN in FB Data')
